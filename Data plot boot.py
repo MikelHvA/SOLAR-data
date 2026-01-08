@@ -7,7 +7,7 @@ Plot_title = "Alles in een" # Titel van de plot
 
 CSV_BESTANDEN = {
     "Master": "1_Master_08_05.csv",
-    "VESC":   "7_VESC_20_02.csv",
+    "VESC":   "7_VESC_20_02.csv", 
     "MPPT1":  "2_MPPT_0_05_07.csv",
     "MPPT2":  "A_MPPT_1_05_07.csv",
     "MPPT3":  "B_MPPT_2_05_07.csv",
@@ -18,8 +18,8 @@ CSV_BESTANDEN = {
 veld_x = 2   # dataloggertijd
 
 # ================= Ranges =================
-x_min = 2000
-x_max = 3000
+x_min = None
+x_max = None
 
 y_left_min  = 0
 y_left_max  = None
