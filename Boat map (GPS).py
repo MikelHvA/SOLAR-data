@@ -31,8 +31,8 @@ def latlon_to_place(lat, lon):
 # ================= INSTELLINGEN =================
 
 CSV_GPS    = "7_SDR_xx_02.csv"      # Voor 2025--> geldt CSV_GPS = "1_master_08_05.csv", voor 2024 en ouder geldt CSV_GPS = "7_SDR_xx_02.csv"
-CSV_MASTER = "9_Master_08_05.csv" 
-CSV_VESC   = "B_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
+CSV_MASTER = "1_Master_08_05.csv" 
+CSV_VESC   = "7_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
 kolom_tijd     = 2
 kolom_lat      = 7                          # 24 voor oude format, alleen van toepassing voor 2024 of ouder (SDR) ander 7
 kolom_lat_ns   = 8                          # 25 voor oude format (SDR) anders 8
