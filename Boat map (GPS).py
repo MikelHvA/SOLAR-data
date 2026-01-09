@@ -30,22 +30,28 @@ def latlon_to_place(lat, lon):
 
 # ================= INSTELLINGEN =================
 
-CSV_GPS    = "7_SDR_xx_02.csv"
-CSV_MASTER = "9_Master_08_05.csv"
-
+CSV_GPS    = "7_SDR_xx_02.csv"      # Voor 2025--> geldt CSV_GPS = "1_master_08_05.csv", voor 2024 en ouder geldt CSV_GPS = "7_SDR_xx_02.csv"
+CSV_MASTER = "9_Master_08_05.csv" 
+CSV_VESC   = "B_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
 kolom_tijd     = 2
-kolom_lat      = 24
-kolom_lat_ns   = 25
-kolom_lon      = 26
-kolom_lon_ew   = 27
-kolom_snelheid = 18   # uit master
+kolom_lat      = 7                          # 24 voor oude format, alleen van toepassing voor 2024 of ouder (SDR) ander 7
+kolom_lat_ns   = 8                          # 25 voor oude format (SDR) anders 8
+kolom_lon      = 9                          # 26 voor oude format (SDR) anders 9
+kolom_lon_ew   = 10                         # 27 voor oude format (SDR) anders 10
+kolom_snelheid = 18      # uit master
+kolom_rpm      = 13      # uit VESC
 
 # Filters
 tijd_min = None
 tijd_max = None
 
-snelheid_min = 1    # km/h
-snelheid_max = None
+snelheid_min = 0.1   # km/h
+snelheid_max = 20
+
+RPM_min = None
+RPM_max = None
+
+Reductiekast_verhouding = 5 # Overbrenging van motor naar schroefas
 
 # Detectie
 STOP_SNELHEID_MAX = 1.0
@@ -79,7 +85,7 @@ def haversine(lat1, lon1, lat2, lon2):
 
 # ================= GPS CSV =================
 
-df_gps = pd.read_csv(CSV_GPS, header=None, sep=",", comment="#")
+df_gps = pd.read_csv(CSV_GPS, header=None, sep=",", comment="#", engine="python", on_bad_lines="skip")
 
 gps = pd.DataFrame({
     "tijd":     pd.to_numeric(df_gps.iloc[:, kolom_tijd - 1], errors="coerce"),
@@ -91,13 +97,20 @@ gps = pd.DataFrame({
 
 # ================= MASTER CSV =================
 
-df_master = pd.read_csv(CSV_MASTER, header=None, sep=",", comment="#")
+df_master = pd.read_csv(CSV_MASTER, header=None, sep=",", comment="#", engine="python", on_bad_lines="skip")
 
 master = pd.DataFrame({
     "tijd": pd.to_numeric(df_master.iloc[:, kolom_tijd - 1], errors="coerce"),
-    "snelheid": pd.to_numeric(
-        df_master.iloc[:, kolom_snelheid - 1], errors="coerce"
-    ),
+    "snelheid": pd.to_numeric(df_master.iloc[:, kolom_snelheid - 1], errors="coerce"),
+}).dropna()
+
+# ================= VESC CSV =================
+
+df_vesc = pd.read_csv(CSV_VESC, header=None, sep=",", comment="#", engine="python", on_bad_lines="skip")
+
+vesc = pd.DataFrame({
+    "tijd": pd.to_numeric(df_vesc.iloc[:, kolom_tijd - 1], errors="coerce"),
+    "rpm": pd.to_numeric(df_vesc.iloc[:, kolom_rpm - 1], errors="coerce"),
 }).dropna()
 
 # ================= COORDINATEN =================
@@ -112,6 +125,7 @@ gps["lon"] = gps.apply(lambda r: apply_hemisphere(r["lon"], r["lon_ew"]), axis=1
 
 gps = gps.sort_values("tijd")
 master = master.sort_values("tijd")
+vesc = vesc.sort_values("tijd")
 
 gps = pd.merge_asof(
     gps,
@@ -120,6 +134,17 @@ gps = pd.merge_asof(
     direction="nearest",
     tolerance=1.0
 ).dropna(subset=["snelheid"])
+
+gps = pd.merge_asof(
+    gps,    
+    vesc,
+    on="tijd",
+    direction="nearest",
+    tolerance=1.0
+)
+
+gps["rpm_schroef"] = gps["rpm"] / Reductiekast_verhouding
+
 
 # ================= FILTERS =================
 
@@ -134,6 +159,12 @@ if snelheid_min is not None:
 
 if snelheid_max is not None:
     gps = gps[gps["snelheid"] <= snelheid_max]
+
+if RPM_min is not None:
+    gps = gps[gps["rpm"] >= RPM_min]
+
+if RPM_max is not None:
+    gps = gps[gps["rpm"] <= RPM_max]
 
 # ================= STOP / ANKER =================
 
@@ -230,10 +261,25 @@ fig.add_trace(go.Scattermapbox(
         colorbar=dict(title="Snelheid (km/h)")
     ),
     text=[
-        f"Tijd: {t:.1f}s<br>Snelheid: {v:.2f} km/h"
-        for t, v in zip(gps["tijd"], gps["snelheid"])
-    ],
-    name="Snelheid"
+    (
+        f"Tijd: {t:.1f}s"
+        f"<br>Snelheid: {v:.2f} km/h"
+        f"<br>RPM motor: {r:.0f} ({rs:.0f})"
+    )
+    if pd.notna(r) else
+    (
+        f"Tijd: {t:.1f}s"
+        f"<br>Snelheid: {v:.2f} km/h"
+        f"<br>RPM motor: n.v.t."
+    )
+    for t, v, r, rs in zip(
+        gps["tijd"],
+        gps["snelheid"],
+        gps["rpm"],
+        gps["rpm_schroef"],
+    )
+],
+name = "SOLAR"   
 ))
 
 if not stops_df.empty:
@@ -260,6 +306,7 @@ if not stops_df.empty:
     ))
 
 fig.update_layout(
+    legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01),
     mapbox_style="open-street-map",
     mapbox_center=dict(
         lat=gps["lat"].mean(),
@@ -273,5 +320,8 @@ fig.update_layout(
 fig.show()
 filename = f"vaarroute_{start_plek}_naar_{eind_plek}.png".replace(" ", "_")
 fig.write_image(filename, width=1600, height=900, scale=2)
+print(f"GPS regels: {len(df_gps)}")
+print(f"MASTER regels: {len(df_master)}")
+print(f"VESC regels: {len(df_vesc)}")
 
 
