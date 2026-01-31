@@ -109,19 +109,6 @@ LIJNEN = [
          
     },
     {
-        "csv": "Master",       
-        "veld": 18,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
-    },
-      {
         "csv": "VESC",       
         "veld": 12,            
        "as": "rechts",         
@@ -134,6 +121,34 @@ LIJNEN = [
        "alpha": 1.0,  
        "factor": 100               
     },
+    {
+        "csv": "Master",       
+        "veld": 18,            
+       "as": "rechts",         
+       "smooth": False,       
+       "window": 15,          
+        "linestyle": "solid",  
+        "linewidth": 2,        
+       "marker": None,        
+       "markersize": 3,       
+       "alpha": 1.0,          
+         
+    },
+     {
+        "csv": "Master",       
+        "veld": 18,            
+       "as": "rechts",         
+       "smooth": False,       
+       "window": 15,          
+        "linestyle": "solid",  
+        "linewidth": 2,        
+       "marker": None,        
+       "markersize": 3,       
+       "alpha": 1.0,    
+       "factor": 0.98,      
+         
+    },
+      
 ]
 
 # ================= VELDNAMEN =================
@@ -153,7 +168,7 @@ VELDNAAM = {
         2: "Tijd (s)",
         4: "Tijd sinds boot (s)",
         10: "Motorstroom (A)",
-        12: "Duty-cycle (tussen 0/1)",
+        12: "Duty-cycle",
         13: "RPM Motoras",
         14: "Ingangsspanning VESC (V)",
     },
@@ -386,7 +401,15 @@ for i, cfg in enumerate(LIJNEN):
         ax = ax_right
 
     veldnaam = VELDNAAM[cfg["csv"]].get(cfg["veld"], f"Veld {cfg['veld']}")
-    label = f"{cfg['csv']} – {veldnaam}"
+
+    factor = cfg.get("factor", 1.0)
+    suffix = cfg.get("label_suffix", "")
+
+    if factor != 1.0 and suffix == "":
+        suffix = f" (×{factor:g})"
+
+    label = f"{cfg['csv']} – {veldnaam}{suffix}"
+
 
     line, = ax.plot(
     x_local[mask],
@@ -406,16 +429,26 @@ for i, cfg in enumerate(LIJNEN):
 
 # ---------- labels ----------
 ax_left.set_xlabel(VELDNAAM["Master"].get(veld_x, "Tijd"))
-ax_left.set_ylabel(" / ".join(
-    VELDNAAM[c["csv"]].get(c["veld"], f"Veld {c['veld']}")
-    for c in LIJNEN if c["as"] == "links"
-))
+left_labels = []
+for c in LIJNEN:
+    if c["as"] == "links":
+        naam = VELDNAAM[c["csv"]].get(c["veld"], f"Veld {c['veld']}")
+        if naam not in left_labels:
+            left_labels.append(naam)
+
+ax_left.set_ylabel(" / ".join(left_labels))
+
 
 if ax_right:
-    ax_right.set_ylabel(" / ".join(
-        VELDNAAM[c["csv"]].get(c["veld"], f"Veld {c['veld']}")
-        for c in LIJNEN if c["as"] == "rechts"
-    ))
+    right_labels = []
+    for c in LIJNEN:
+        if c["as"] == "rechts":
+            naam = VELDNAAM[c["csv"]].get(c["veld"], f"Veld {c['veld']}")
+            if naam not in right_labels:
+                right_labels.append(naam)
+
+    ax_right.set_ylabel(" / ".join(right_labels))
+
 
 # ---------- ranges ----------
 ax_left.set_xlim(x_min, x_max)
