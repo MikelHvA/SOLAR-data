@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # ================= INSTELLINGEN =================
 
-Plot_title = "Alles in een" # Titel van de plot
+Plot_title = "Testvaart Portes le Valence" # Titel van de plot
 
 CSV_BESTANDEN = {
     "Master": "1_Master_08_05.csv",
@@ -13,6 +13,7 @@ CSV_BESTANDEN = {
     "MPPT3":  "B_MPPT_2_05_07.csv",
     "MPPT4":  "8_MPPT_3_05_07.csv",
     "MPPT5":  "9_MPPT_4_05_07.csv",
+    "Loadcell": "5_LoadCell_21_03.csv",
 }
 
 veld_x = 2   # dataloggertijd
@@ -59,17 +60,68 @@ y_right_max = None
 LIJNEN = [
  
     {
-        "csv": "Master",
-        "veld": 18,
+        "csv": "VESC",
+        "veld": 13,
         "as": "links",
         "smooth": False,
         "window": 15,
-        "linestyle": "None",
-        "marker": ".",
+        "linestyle": "-",
+        "marker": "None",
         "markersize": 3,
-        "alpha": 0.8,
+        "alpha": 0.95,
     },
-    
+    {
+        "csv": "VESC",       
+        "veld": 10,            
+       "as": "rechts",         
+       "smooth": False,       
+       "window": 15,          
+        "linestyle": "solid",  
+        "linewidth": 2,        
+       "marker": None,        
+       "markersize": 3,       
+       "alpha": 1.0,          
+         
+    },
+    {
+        "csv": "VESC",       
+        "veld": 14,            
+       "as": "rechts",         
+       "smooth": False,       
+       "window": 15,          
+        "linestyle": "solid",  
+        "linewidth": 2,        
+       "marker": None,        
+       "markersize": 3,       
+       "alpha": 1.0,          
+         
+    },
+    {
+        "csv": "Master",       
+        "veld": 18,            
+       "as": "rechts",         
+       "smooth": False,       
+       "window": 15,          
+        "linestyle": "solid",  
+        "linewidth": 2,        
+       "marker": None,        
+       "markersize": 3,       
+       "alpha": 1.0,          
+         
+    },
+      {
+        "csv": "VESC",       
+        "veld": 12,            
+       "as": "rechts",         
+       "smooth": False,       
+       "window": 15,          
+        "linestyle": "solid",  
+        "linewidth": 2,        
+       "marker": None,        
+       "markersize": 3,       
+       "alpha": 1.0,          
+         
+    },
 ]
 
 # ================= VELDNAMEN =================
@@ -89,6 +141,8 @@ VELDNAAM = {
         2: "Tijd (s)",
         4: "Tijd sinds boot (s)",
         10: "Motorstroom (A)",
+        12: "Duty-cycle (tussen 0/1)",
+        13: "RPM Motoras",
         14: "Ingangsspanning VESC (V)",
     },
     "MPPT1": {
@@ -220,6 +274,10 @@ VELDNAAM = {
         26: "Kanaal 2 DAC waarde, in 12 bits ",
         34: "Berekende zoninval pyranometer, in W/m2 (ongekalibreerd)",
         35: "Ruwe meetwaarde pyranometer",
+    },
+    "Loadcell": {
+        2: "Tijd (s)",
+        5: "Processed sample waarde van de load cell (ADC)",
     }
 }
 # ===============================================
