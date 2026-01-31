@@ -34,10 +34,10 @@ CSV_GPS    = "7_SDR_xx_02.csv"      # Voor 2025--> geldt CSV_GPS = "1_master_08_
 CSV_MASTER = "1_Master_08_05.csv" 
 CSV_VESC   = "7_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
 kolom_tijd     = 2
-kolom_lat      = 7                          # 24 voor oude format, alleen van toepassing voor 2024 of ouder (SDR) ander 7
-kolom_lat_ns   = 8                          # 25 voor oude format (SDR) anders 8
-kolom_lon      = 9                          # 26 voor oude format (SDR) anders 9
-kolom_lon_ew   = 10                         # 27 voor oude format (SDR) anders 10
+kolom_lat      = 7                        # 24 voor oude format, alleen van toepassing voor 2024 of ouder (SDR) ander 7
+kolom_lat_ns   = 8                         # 25 voor oude format (SDR) anders 8
+kolom_lon      = 9                         # 26 voor oude format (SDR) anders 9
+kolom_lon_ew   = 10                        # 27 voor oude format (SDR) anders 10
 kolom_snelheid = 18      # uit master
 kolom_rpm      = 13      # uit VESC
 
@@ -45,13 +45,13 @@ kolom_rpm      = 13      # uit VESC
 tijd_min = None
 tijd_max = None
 
-snelheid_min = 0.1   # km/h
-snelheid_max = 20
+snelheid_min = None
+snelheid_max = 18
 
 RPM_min = None
 RPM_max = None
 
-Reductiekast_verhouding = 5 # Overbrenging van motor naar schroefas
+Reductiekast_verhouding = 7 # Overbrenging van motor naar schroefas
 
 # Detectie
 STOP_SNELHEID_MAX = 1.0
