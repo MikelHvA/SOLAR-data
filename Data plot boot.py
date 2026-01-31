@@ -70,6 +70,18 @@ LIJNEN = [
         "markersize": 3,
         "alpha": 0.95,
     },
+     {
+        "csv": "VESC",
+        "veld": 13,
+        "as": "links",
+        "smooth": False,
+        "window": 15,
+        "linestyle": "-",
+        "marker": "None",
+        "markersize": 3,
+        "alpha": 0.95,
+        "factor": 1/5, #RPM reductiekastfactor / factor kan gebruikt worden om te delen of vermenigvuldigen. 
+    },
     {
         "csv": "VESC",       
         "veld": 10,            
@@ -119,8 +131,8 @@ LIJNEN = [
         "linewidth": 2,        
        "marker": None,        
        "markersize": 3,       
-       "alpha": 1.0,          
-         
+       "alpha": 1.0,  
+       "factor": 100               
     },
 ]
 
@@ -339,7 +351,11 @@ for i, cfg in enumerate(LIJNEN):
     x = pd.to_numeric(df.iloc[:, ix_x], errors="coerce")
     x_local = pd.to_numeric(df.iloc[:, ix_x], errors="coerce")
     y = pd.to_numeric(df.iloc[:, ix_y], errors="coerce")
-    
+
+    # ------------ Factor -------------------
+    factor = cfg.get("factor", 1.0)
+
+    y = y * factor     
 
     # ---------- uitschieter-filter ----------
     if cfg.get("filter") == "iqr":
