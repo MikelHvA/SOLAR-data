@@ -1,0 +1,84 @@
+# Js berekenen testvaart.pyplot
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+K = 0.335  # Diametercoëfficiënt voor Js berekening  
+W = 7   # wikkelingen motor
+
+S = 17500 #start tijd 
+E = 21000 # eind tijd
+
+df1_raw = pd.read_csv('/Users/mariekekok/Documents/plotten/test/1_Master_08_05.csv',  sep=',', header=None, comment='#')
+df2_raw = pd.read_csv('/Users/mariekekok/Documents/plotten/test/7_VESC_20_02.csv', sep=',', header=None, comment='#')
+
+
+df1 = pd.DataFrame({
+    'Time': df1_raw[1],       # kolom 2 = tijd
+    'Snelheid': df1_raw[17]   # kolom 17 = snelheid
+})
+
+df2 = pd.DataFrame({
+    'Time': df2_raw[1],       # kolom 1 = tijd
+    'RPM': df2_raw[12]        # kolom 12 = RPM
+})
+
+# Zorg dat kolommen float zijn (zorgen dat er mee gerekend kan worden zonder fouten)
+df1['Time'] = df1['Time'].astype(float)
+df1['Snelheid'] = df1['Snelheid'].astype(float)
+df2['Time'] = df2['Time'].astype(float)
+df2['RPM'] = df2['RPM'].astype(float)
+
+# Sorteren (vereist voor interpolatie / merge)
+df1 = df1.sort_values("Time").reset_index(drop=True)
+df2 = df2.sort_values("Time").reset_index(drop=True)
+
+# Interpoleer RPM naar de tijdstippen van Snelheid
+rpm_interpolated = np.interp(df1['Time'], df2['Time'], df2['RPM'])
+
+# Voeg geïnterpoleerde RPM toe aan df1
+df1['RPM'] = rpm_interpolated
+
+# Berekening Js volgens de formule
+df1['Js'] = (df1['Snelheid'] / 3.6) / (((df1['RPM'] / 60) / W) * K)
+
+# Plotten van de resultaten
+fig, ax1 = plt.subplots()
+
+# Eerste y-as voor Js en Snelheid
+ax1.plot(df1['Time'], df1['Js'], label='Js', color="#B539E2")
+ax1.plot(df1["Time"], df1['Snelheid'], label='Snelheid (km/h)', color="#d15095")
+ax1.set_ylabel('Js / Snelheid (km/h)', color='black')
+ax1.set_xlabel('Time (s)')
+ax1.set_ylim (0,20)
+ax1.set_xlim (S,E)
+
+# Tweede y-as voor RPM
+ax2 = ax1.twinx()
+ax2.plot(df1["Time"], df1['RPM'], label='RPM', color="#4CB1E3")
+ax2.set_ylabel('RPM', color='black')    
+ax2.set_ylim (0,None)
+
+# Plotten
+plt.legend(ax1.get_lines() + ax2.get_lines(), 
+           [line.get_label() for line in ax1.get_lines()] +
+           [line.get_label() for line in ax2.get_lines()],
+           loc='upper left')
+plt.title(" Franeker – Leeuwaarden   7:1")
+plt.grid(True)
+plt.show()
+
+#Histogram
+df_js_sel = df1[(df1['Time'] >= S) & (df1['Time'] <= E)]
+
+mask = (df_js_sel['RPM'] > 100) & (df_js_sel['Js'] > 0) & (df_js_sel['Js'] < 2.5) & (df_js_sel['Snelheid'] > 1)
+df_plot = df_js_sel[mask]
+
+plt.figure()
+plt.hist(df_plot['Js'], bins=50, range=(0, 2), color='tab:blue', alpha=0.7, edgecolor='black')
+plt.xlabel('Js')
+plt.ylabel('Aantal')
+plt.title(' Franeker – Leeuwaarden 7:1 incapa')
+plt.grid(True)
+plt.show()
