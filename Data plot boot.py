@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # ================= INSTELLINGEN =================
 
-Plot_title = "Testvaart Portes le Valence" # Titel van de plot
+Plot_title = " Duivendrecht 07-11-2025" # Titel van de plot
 
 CSV_BESTANDEN = {
     "Master": "1_Master_08_05.csv",
@@ -14,6 +14,7 @@ CSV_BESTANDEN = {
     "MPPT4":  "8_MPPT_3_05_07.csv",
     "MPPT5":  "9_MPPT_4_05_07.csv",
     "Loadcell": "5_LoadCell_21_03.csv",
+    "Accu":"3_Accu_09_05.csv",
 }
 
 veld_x = 2   # dataloggertijd
@@ -55,14 +56,15 @@ y_right_max = None
 #   "z_window": 50,
 #   "z": 3.0
 
+# Toevoegen "factor": 1/5, #RPM reductiekastfactor / factor kan gebruikt worden om te delen of vermenigvuldigen. 
 
 # ================= LIJNEN =================
 LIJNEN = [
  
     {
         "csv": "VESC",
-        "veld": 13,
-        "as": "links",
+        "veld": 8,
+        "as": "rechts",
         "smooth": False,
         "window": 15,
         "linestyle": "-",
@@ -70,7 +72,40 @@ LIJNEN = [
         "markersize": 3,
         "alpha": 0.95,
     },
-     {
+      {
+        "csv": "VESC",
+        "veld": 9,
+        "as": "rechts",
+        "smooth": False,
+        "window": 15,
+        "linestyle": "-",
+        "marker": "None",
+        "markersize": 3,
+        "alpha": 0.95,
+    },
+       {
+        "csv": "VESC",
+        "veld": 10,
+        "as": "rechts",
+        "smooth": False,
+        "window": 15,
+        "linestyle": "-",
+        "marker": "None",
+        "markersize": 3,
+        "alpha": 0.95,
+    },
+       {
+        "csv": "VESC",
+        "veld": 11,
+        "as": "rechts",
+        "smooth": False,
+        "window": 15,
+        "linestyle": "-",
+        "marker": "None",
+        "markersize": 3,
+        "alpha": 0.95,
+    },
+    {
         "csv": "VESC",
         "veld": 13,
         "as": "links",
@@ -80,75 +115,7 @@ LIJNEN = [
         "marker": "None",
         "markersize": 3,
         "alpha": 0.95,
-        "factor": 1/5, #RPM reductiekastfactor / factor kan gebruikt worden om te delen of vermenigvuldigen. 
-    },
-    {
-        "csv": "VESC",       
-        "veld": 10,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
-    },
-    {
-        "csv": "VESC",       
-        "veld": 14,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
-    },
-    {
-        "csv": "VESC",       
-        "veld": 12,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,  
-       "factor": 100               
-    },
-    {
-        "csv": "Master",       
-        "veld": 18,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
-    },
-     {
-        "csv": "Master",       
-        "veld": 18,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,    
-       "factor": 0.98,      
-         
-    },
-      
+    },         
 ]
 
 # ================= VELDNAMEN =================
@@ -167,7 +134,10 @@ VELDNAAM = {
     "VESC": {
         2: "Tijd (s)",
         4: "Tijd sinds boot (s)",
+        8:"Temperatuur van de VESC driver (°C)",
+        9:"Temperatuur van de motor (°C)",
         10: "Motorstroom (A)",
+        11: "Ingangstroom VESC (A)",
         12: "Duty-cycle",
         13: "RPM Motoras",
         14: "Ingangsspanning VESC (V)",
@@ -305,7 +275,11 @@ VELDNAAM = {
     "Loadcell": {
         2: "Tijd (s)",
         5: "Processed sample waarde van de load cell (ADC)",
-    }
+    },
+    "Accu": {
+        2: "Tijd (s)",
+        21: "Huidige percentage van accu (%)"  
+    },
 }
 # ===============================================
 

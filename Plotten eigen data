@@ -1,0 +1,58 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+def bereken_Q(Kq, rho, n, D):
+    return Kq * rho * n**2  * D**5
+
+
+CSV_Master = "1_Master_08_05.csv"
+CSV_VESC = "7_VESC_20_02.csv"
+
+Kq = 0.01808
+rho = 1000
+D = 0.355
+Reductie = 5
+
+
+x_min = 0.1
+x_max = 15
+
+n_min = None #1.59 * 60 * 5
+n_max = None #1.59 * 60 * 5 
+
+# Plotten
+
+df_vesc = pd.read_csv(CSV_VESC, header=None, sep=",", comment="#")
+df_master = pd.read_csv(CSV_Master, header=None, sep=",", comment="#")
+
+df = pd.DataFrame({
+    "n": pd.to_numeric(df_vesc.iloc[:, 12], errors="coerce"),
+    "snelheid": pd.to_numeric(df_master.iloc[:, 17], errors="coerce")
+}).dropna()
+
+df["n_rps"] = df["n"] / 60
+df["n_eff"] = df["n_rps"] / Reductie
+df["Q"] = bereken_Q(Kq, rho, df["n_eff"], D)
+
+#Filters 
+if x_min is not None:
+    df = df[df["snelheid"] >= x_min]
+
+if x_max is not None:
+    df = df[df["snelheid"] <= x_max]
+
+if n_min is not None:
+    df = df[df["n"] >= n_min]
+
+if n_max is not None:
+    df = df[df["n"] <= n_max]    
+
+
+plt.figure()
+plt.plot(df["snelheid"], df["Q"])
+plt.xlabel("Snelheid (km/h)")
+plt.ylabel("Q")
+plt.title("Q als functie van snelheid")
+plt.grid(True)
+plt.show()
