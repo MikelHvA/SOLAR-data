@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # ================= INSTELLINGEN =================
 
-Plot_title = " Duivendrecht 07-11-2025" # Titel van de plot
+Plot_title = "Duivendrecht - Dapperbuurt 02-04-2026" # Titel van de plot
 
 CSV_BESTANDEN = {
     "Master": "1_Master_08_05.csv",
@@ -27,7 +27,7 @@ y_left_min  = 0
 y_left_max  = None
 
 y_right_min = 0
-y_right_max = None
+y_right_max = 20
 # ================= LIJNEN voorbeelden typen =================
 
 # Standaard formaat, gebruik deze als template: (zonder #) 
@@ -62,8 +62,8 @@ y_right_max = None
 LIJNEN = [
  
     {
-        "csv": "VESC",
-        "veld": 8,
+        "csv": "Master",
+        "veld": 11,
         "as": "rechts",
         "smooth": False,
         "window": 15,
@@ -74,30 +74,8 @@ LIJNEN = [
     },
       {
         "csv": "VESC",
-        "veld": 9,
-        "as": "rechts",
-        "smooth": False,
-        "window": 15,
-        "linestyle": "-",
-        "marker": "None",
-        "markersize": 3,
-        "alpha": 0.95,
-    },
-       {
-        "csv": "VESC",
         "veld": 10,
-        "as": "rechts",
-        "smooth": False,
-        "window": 15,
-        "linestyle": "-",
-        "marker": "None",
-        "markersize": 3,
-        "alpha": 0.95,
-    },
-       {
-        "csv": "VESC",
-        "veld": 11,
-        "as": "rechts",
+        "as": "links",
         "smooth": False,
         "window": 15,
         "linestyle": "-",
@@ -115,7 +93,9 @@ LIJNEN = [
         "marker": "None",
         "markersize": 3,
         "alpha": 0.95,
-    },         
+        "factor": 1/5, #RPM reductiefactor 5
+    },
+     
 ]
 
 # ================= VELDNAMEN =================
