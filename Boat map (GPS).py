@@ -33,13 +33,15 @@ def latlon_to_place(lat, lon):
 CSV_GPS    = "7_SDR_xx_02.csv"      # Voor 2025--> geldt CSV_GPS = "1_master_08_05.csv", voor 2024 en ouder geldt CSV_GPS = "7_SDR_xx_02.csv"
 CSV_MASTER = "1_Master_08_05.csv" 
 CSV_VESC   = "7_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
+CSV_ACCU   = "3_Accu_09_05.csv"     
 kolom_tijd     = 2
 kolom_lat      = 7                        # 24 voor oude format, alleen van toepassing voor 2024 of ouder (SDR) ander 7
 kolom_lat_ns   = 8                         # 25 voor oude format (SDR) anders 8
 kolom_lon      = 9                         # 26 voor oude format (SDR) anders 9
 kolom_lon_ew   = 10                        # 27 voor oude format (SDR) anders 10
-kolom_snelheid = 18      # uit master
+kolom_snelheid = 11      # uit master / 11 is Snelheid t.o.v. de grond, 18 is GPS snelheid
 kolom_rpm      = 13      # uit VESC
+kolom_soc      = 21      # uit Accu (%)
 
 # Filters
 tijd_min = None
@@ -51,7 +53,7 @@ snelheid_max = 18
 RPM_min = None
 RPM_max = None
 
-Reductiekast_verhouding = 7 # Overbrenging van motor naar schroefas
+Reductiekast_verhouding = 5 # Overbrenging van motor naar schroefas
 
 # Detectie
 STOP_SNELHEID_MAX = 1.0
@@ -111,6 +113,15 @@ df_vesc = pd.read_csv(CSV_VESC, header=None, sep=",", comment="#", engine="pytho
 vesc = pd.DataFrame({
     "tijd": pd.to_numeric(df_vesc.iloc[:, kolom_tijd - 1], errors="coerce"),
     "rpm": pd.to_numeric(df_vesc.iloc[:, kolom_rpm - 1], errors="coerce"),
+}).dropna()
+
+# ================= ACCU CSV =================
+
+df_accu = pd.read_csv(CSV_ACCU, header=None, sep=",", comment="#", engine="python", on_bad_lines="skip")
+
+accu = pd.DataFrame({
+    "tijd": pd.to_numeric(df_accu.iloc[:, kolom_tijd - 1], errors="coerce"),
+    "soc": pd.to_numeric(df_accu.iloc[:, kolom_soc - 1], errors="coerce"),
 }).dropna()
 
 # ================= COORDINATEN =================
@@ -265,6 +276,7 @@ fig.add_trace(go.Scattermapbox(
         f"Tijd: {t:.1f}s"
         f"<br>Snelheid: {v:.2f} km/h"
         f"<br>RPM motor: {r:.0f} ({rs:.0f})"
+        f"<br>SoC: {s:.1f}%"
     )
     if pd.notna(r) else
     (
@@ -272,11 +284,12 @@ fig.add_trace(go.Scattermapbox(
         f"<br>Snelheid: {v:.2f} km/h"
         f"<br>RPM motor: n.v.t."
     )
-    for t, v, r, rs in zip(
+    for t, v, r, rs, s in zip(
         gps["tijd"],
         gps["snelheid"],
         gps["rpm"],
         gps["rpm_schroef"],
+        accu["soc"]
     )
 ],
 name = "SOLAR"   
@@ -312,7 +325,7 @@ fig.update_layout(
         lat=gps["lat"].mean(),
         lon=gps["lon"].mean()
     ),
-    mapbox_zoom=8,
+    mapbox_zoom=11,
     title=plot_title,
     margin=dict(l=0, r=0, t=50, b=0)
 )

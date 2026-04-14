@@ -1,0 +1,15 @@
+CHANGELOG Boat map (GPS)
+
+Tips:
+- Veranderd de reductiekast verhouding op basis van de gekozen reductiekast
+- Speel met de filters voor optimaal resultaat
+- Vmax staat standaard ingesteld op 18 km/h, de boot gaat niet harder dan dit op dit moment. 
+
+Bug:
+- Startplek is een beetje cursed af en toe.
+
+14-04-2026 (V1.1)
+- Stage of charge (SoC) toegevoegd aan het label
+
+
+
