@@ -10,14 +10,14 @@ W = 6
 S = 0 
 E = 6000
 T= '09 02-04-2026 water tenopzicht van de ondergrond'
-Title= "Trendlijnen vaartocht Franeker - Leeuwaarden 2025"
+Title= "Trendlijnen vaartocht Trevoux - Ourox-sur-Saone 08-07-2025"
 
-df1_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0079 - Franeker - Leeuwaarden/1_Master_08_05.csv',  sep=',', header=None, comment='#')
-df2_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0079 - Franeker - Leeuwaarden/7_VESC_20_02.csv', sep=',', header=None, comment='#')
+df1_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0175 - 20250706T064501 13h8m31s 170.217km Trevoux - Portes-les-Valence/1_Master_08_05.csv',  sep=',', header=None, comment='#')
+df2_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0175 - 20250706T064501 13h8m31s 170.217km Trevoux - Portes-les-Valence/7_VESC_20_02.csv', sep=',', header=None, comment='#')
 
 df1 = pd.DataFrame({
     'Time': df1_raw[1],
-    'Snelheid': df1_raw[10]
+    'Snelheid': df1_raw[17] #17 is t.o.v. water, #10 is t.o.v. grond
 })
 
 df2 = pd.DataFrame({
