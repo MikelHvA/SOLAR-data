@@ -4,16 +4,11 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-K = 0.335  
-W = 6  
 
-S = 0 
-E = 6000
-T= '09 02-04-2026 water tenopzicht van de ondergrond'
-Title= "Trendlijnen vaartocht Trevoux - Ourox-sur-Saone 08-07-2025"
+Title= "Trendlijnen vaartocht Akkrum Endurance 5:1 Ster 15-05-2026"
 
-df1_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0175 - 20250706T064501 13h8m31s 170.217km Trevoux - Portes-les-Valence/1_Master_08_05.csv',  sep=',', header=None, comment='#')
-df2_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0175 - 20250706T064501 13h8m31s 170.217km Trevoux - Portes-les-Valence/7_VESC_20_02.csv', sep=',', header=None, comment='#')
+df1_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0042 - 20260515T084645 4h4m12s 26.877km Akkrum - Jirnsum/1_Master_08_05.csv',  sep=',', header=None, comment='#')
+df2_raw = pd.read_csv('C:/Users/mikel/OneDrive - HvA/CleanMobility - Vaartochten gebruikt voor data analyse/0042 - 20260515T084645 4h4m12s 26.877km Akkrum - Jirnsum/7_VESC_20_02.csv', sep=',', header=None, comment='#')
 
 df1 = pd.DataFrame({
     'Time': df1_raw[1],
@@ -154,8 +149,8 @@ ax1.plot(x_new, y_new, color='red', label='Trendlijn vermogen', linewidth=2)
 
 ax1.set_xlim(0, 17)
 ax1.set_ylim(0, 1500)
-ax1.set_xlabel('Snelheid')
-ax1.set_ylabel('Vermogen')
+ax1.set_xlabel('Snelheid t.o.v. de grond (km/h)')
+ax1.set_ylabel('Vermogen (W)')
 
 # Rechter as
 ax2 = ax1.twinx()
