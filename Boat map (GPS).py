@@ -30,7 +30,7 @@ def latlon_to_place(lat, lon):
 
 # ================= INSTELLINGEN =================
 
-CSV_GPS    = "7_SDR_xx_02.csv"      # Voor 2025--> geldt CSV_GPS = "1_master_08_05.csv", voor 2024 en ouder geldt CSV_GPS = "7_SDR_xx_02.csv"
+CSV_GPS    = "1_Master_08_05.csv"      # Voor 2025--> geldt CSV_GPS = "1_master_08_05.csv", voor 2024 en ouder geldt CSV_GPS = "7_SDR_xx_02.csv"
 CSV_MASTER = "1_Master_08_05.csv" 
 CSV_VESC   = "7_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
 CSV_ACCU   = "3_Accu_09_05.csv"     
@@ -41,14 +41,15 @@ kolom_lon      = 9                         # 26 voor oude format (SDR) anders 9
 kolom_lon_ew   = 10                        # 27 voor oude format (SDR) anders 10
 kolom_snelheid = 11      # uit master / 11 is Snelheid t.o.v. de grond, 18 is GPS snelheid
 kolom_rpm      = 13      # uit VESC
-kolom_soc      = 21      # uit Accu (%)
+kolom_ct       = 19      # capaciteit Accu (A) (Wordt gebruikt voor SoC berekening)
+kolom_soc      = 21      # SoC Accu (%) (ALLEEN VOOR BACKUP)
 
 # Filters
-tijd_min = None
+tijd_min = 14300
 tijd_max = None
 
 snelheid_min = None
-snelheid_max = 18
+snelheid_max = 20
 
 RPM_min = None
 RPM_max = None
@@ -113,7 +114,11 @@ df_vesc = pd.read_csv(CSV_VESC, header=None, sep=",", comment="#", engine="pytho
 vesc = pd.DataFrame({
     "tijd": pd.to_numeric(df_vesc.iloc[:, kolom_tijd - 1], errors="coerce"),
     "rpm": pd.to_numeric(df_vesc.iloc[:, kolom_rpm - 1], errors="coerce"),
+    "spanning": pd.to_numeric(df_vesc.iloc[:, 5 - 1], errors="coerce"), 
+    "stroom": pd.to_numeric(df_vesc.iloc[:, 11 - 1], errors="coerce"),
 }).dropna()
+
+gps["vermogen"] = vesc["spanning"] * vesc["stroom"] 
 
 # ================= ACCU CSV =================
 
@@ -121,7 +126,8 @@ df_accu = pd.read_csv(CSV_ACCU, header=None, sep=",", comment="#", engine="pytho
 
 accu = pd.DataFrame({
     "tijd": pd.to_numeric(df_accu.iloc[:, kolom_tijd - 1], errors="coerce"),
-    "soc": pd.to_numeric(df_accu.iloc[:, kolom_soc - 1], errors="coerce"),
+    "soc": pd.to_numeric(df_accu.iloc[:, kolom_ct - 1], errors="coerce") / 55.3 * 100,
+    "soc2": pd.to_numeric(df_accu.iloc[:, kolom_soc - 1], errors="coerce"),
 }).dropna()
 
 # ================= COORDINATEN =================
@@ -137,6 +143,7 @@ gps["lon"] = gps.apply(lambda r: apply_hemisphere(r["lon"], r["lon_ew"]), axis=1
 gps = gps.sort_values("tijd")
 master = master.sort_values("tijd")
 vesc = vesc.sort_values("tijd")
+accu = accu.sort_values("tijd")
 
 gps = pd.merge_asof(
     gps,
@@ -149,6 +156,14 @@ gps = pd.merge_asof(
 gps = pd.merge_asof(
     gps,    
     vesc,
+    on="tijd",
+    direction="nearest",
+    tolerance=1.0
+)
+
+gps = pd.merge_asof(
+    gps,
+    accu,
     on="tijd",
     direction="nearest",
     tolerance=1.0
@@ -276,20 +291,27 @@ fig.add_trace(go.Scattermapbox(
         f"Tijd: {t:.1f}s"
         f"<br>Snelheid: {v:.2f} km/h"
         f"<br>RPM motor: {r:.0f} ({rs:.0f})"
-        f"<br>SoC: {s:.1f}%"
+        f"<br>SoC: {s:.1f} %"
+        f"<br>Vermogen: {p:.0f} W"
+        #f"<br>SoC backup: {s2:.1f} %"  # weghalen voor aanzetten voor backup SoC, uit accu CSV (ook regel 299)
     )
     if pd.notna(r) else
     (
         f"Tijd: {t:.1f}s"
         f"<br>Snelheid: {v:.2f} km/h"
         f"<br>RPM motor: n.v.t."
+        f"<br>SoC: n.v.t."
+        f"<br>Vermogen: n.v.t."
+        #f"<br>SoC backup: n.v.t." # weghalen voor aanzetten voor backup SoC, uit accu CSV (ook regel 291)
     )
-    for t, v, r, rs, s in zip(
+    for t, v, r, rs, s, s2, p in zip(
         gps["tijd"],
         gps["snelheid"],
         gps["rpm"],
         gps["rpm_schroef"],
-        accu["soc"]
+        gps["soc"],
+        gps["soc2"],
+        gps["vermogen"]
     )
 ],
 name = "SOLAR"   
@@ -336,5 +358,6 @@ fig.write_image(filename, width=1600, height=900, scale=2)
 print(f"GPS regels: {len(df_gps)}")
 print(f"MASTER regels: {len(df_master)}")
 print(f"VESC regels: {len(df_vesc)}")
+print(f"SoC regels: {len(df_accu)}")
 
 

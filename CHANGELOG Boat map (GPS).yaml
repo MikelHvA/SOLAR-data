@@ -11,4 +11,6 @@ Bug:
 14-04-2026 (V1.1)
 - Stage of charge (SoC) toegevoegd aan het label
 
-
+04-06-2026 (V1.1.1)
+- Stage of charge (SoC) is berekend op basis van de max capaciteit van de accu ipv datalog 21 (%), dit is accurater.
+- Vermogen toegevoegd maar werkt nog niet. (WIP)
