@@ -43,6 +43,8 @@ kolom_snelheid = 11      # uit master / 11 is Snelheid t.o.v. de grond, 18 is GP
 kolom_rpm      = 13      # uit VESC
 kolom_ct       = 19      # capaciteit Accu (A) (Wordt gebruikt voor SoC berekening)
 kolom_soc      = 21      # SoC Accu (%) (ALLEEN VOOR BACKUP)
+kolom_spanning = 14       # uit VESC
+kolom_stroom_VESC = 11   # uit VESC
 
 # Filters
 tijd_min = 14300
@@ -114,11 +116,9 @@ df_vesc = pd.read_csv(CSV_VESC, header=None, sep=",", comment="#", engine="pytho
 vesc = pd.DataFrame({
     "tijd": pd.to_numeric(df_vesc.iloc[:, kolom_tijd - 1], errors="coerce"),
     "rpm": pd.to_numeric(df_vesc.iloc[:, kolom_rpm - 1], errors="coerce"),
-    "spanning": pd.to_numeric(df_vesc.iloc[:, 5 - 1], errors="coerce"), 
-    "stroom": pd.to_numeric(df_vesc.iloc[:, 11 - 1], errors="coerce"),
+    "spanning": pd.to_numeric(df_vesc.iloc[:, kolom_spanning - 1], errors="coerce"), 
+    "stroom": pd.to_numeric(df_vesc.iloc[:, kolom_stroom_VESC - 1], errors="coerce"),
 }).dropna()
-
-gps["vermogen"] = vesc["spanning"] * vesc["stroom"] 
 
 # ================= ACCU CSV =================
 
@@ -170,7 +170,7 @@ gps = pd.merge_asof(
 )
 
 gps["rpm_schroef"] = gps["rpm"] / Reductiekast_verhouding
-
+gps["vermogen"] = gps["spanning"] * gps["stroom"] 
 
 # ================= FILTERS =================
 

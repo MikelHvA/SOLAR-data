@@ -14,3 +14,6 @@ Bug:
 04-06-2026 (V1.1.1)
 - Stage of charge (SoC) is berekend op basis van de max capaciteit van de accu ipv datalog 21 (%), dit is accurater.
 - Vermogen toegevoegd maar werkt nog niet. (WIP)
+
+04-06-2026 (V1.2)
+- Vermogen (Elektrisch) werkt nu wel, kolommen kunnen boven aangepast worden.
