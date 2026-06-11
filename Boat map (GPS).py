@@ -39,7 +39,7 @@ kolom_lat      = 7                        # 24 voor oude format, alleen van toep
 kolom_lat_ns   = 8                         # 25 voor oude format (SDR) anders 8
 kolom_lon      = 9                         # 26 voor oude format (SDR) anders 9
 kolom_lon_ew   = 10                        # 27 voor oude format (SDR) anders 10
-kolom_snelheid = 11      # uit master / 11 is Snelheid t.o.v. de grond, 18 is GPS snelheid
+kolom_snelheid = 18      # uit master / 11 is Snelheid t.o.v. de grond, 18 is GPS snelheid
 kolom_rpm      = 13      # uit VESC
 kolom_ct       = 19      # capaciteit Accu (A) (Wordt gebruikt voor SoC berekening)
 kolom_soc      = 21      # SoC Accu (%) (ALLEEN VOOR BACKUP)
@@ -47,7 +47,7 @@ kolom_spanning = 14       # uit VESC
 kolom_stroom_VESC = 11   # uit VESC
 
 # Filters
-tijd_min = 14300
+tijd_min = None
 tijd_max = None
 
 snelheid_min = None
@@ -171,6 +171,7 @@ gps = pd.merge_asof(
 
 gps["rpm_schroef"] = gps["rpm"] / Reductiekast_verhouding
 gps["vermogen"] = gps["spanning"] * gps["stroom"] 
+gps["snelheid"] = gps["snelheid"] * 0.93   #omrekenfactor
 
 # ================= FILTERS =================
 
