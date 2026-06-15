@@ -1,9 +1,16 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
+
+from pathlib import Path
+
 
 # ================= INSTELLINGEN =================
 
-PLOT_TITLE = "Elektrisch en mechanisch vermogen t.o.v. vaarsnelheid - Rondje + Sprint Akkrum 2026 ster 5:1 "
+PLOT_TITLE = (
+    "Elektrisch en mechanisch vermogen t.o.v. vaarsnelheid "
+    "- Amstel 15-06-2026 ster 8:1 (Incapa)"
+)
 
 CSV_BESTANDEN = {
     "Master": "1_Master_08_05.csv",
@@ -11,218 +18,387 @@ CSV_BESTANDEN = {
     "Loadcell": "5_LoadCell_21_03.csv",
 }
 
+
 # ================= VELDEN =================
-# De veldnummers beginnen bij 1, net zoals in je eerdere script.
+# Veldnummers beginnen bij 1.
 
 VELD_TIJD = 2
 
-VELD_SNELHEID = 18       # Master: snelheid t.o.v. water in km/h
+# Master
+VELD_SNELHEID = 11
 
-VELD_MOTORSTROOM = 11    # VESC: motorstroom VESC in A
-VELD_DUTY_CYCLE = 12     # VESC: duty-cycle tussen 0 en 1
-VELD_SPANNING = 14       # VESC: ingangsspanning in V
+# VESC
+VELD_INGANGSSTROOM = 11
+VELD_SPANNING = 14
 
-VELD_LOADCELL_ADC = 5    # Loadcell: ADC-waarde
+# Loadcell
+VELD_LOADCELL_ADC = 5
+
 
 # ================= LOADCELLKALIBRATIE =================
 
 RICHTINGSCOEFFICIENT = -2.471E-05
 STARTWAARDE = -5.583
 
-# De gemeten loadcellkracht wordt omgekeerd met * -1
 LOADCELL_OMKEREN = True
+
 
 # ================= HEFBOOMAFSTANDEN =================
 
-L1 = 0.20   # afstand draaipunt tot loadcell in meter
-L2 = 0.71   # afstand draaipunt tot schroef in meter
+L1 = 0.20  # afstand draaipunt tot loadcell in meter
+L2 = 0.71  # afstand draaipunt tot schroef in meter
+
 
 # ================= TIJDSYNCHRONISATIE =================
 
-# Maximale afstand tussen twee gekoppelde tijdstippen.
-# Pas dit aan wanneer de logfrequenties ver uit elkaar liggen.
 TIJD_TOLERANTIE = 0.25
 
 
 # ================= FILTERS =================
 
+TIJD_MIN = 6800
+TIJD_MAX = 7800
+
 SNELHEID_MIN = 0
 SNELHEID_MAX = 20
-
-# Punten met negatieve of extreem hoge duty-cycle verwijderen
-DUTY_MIN = 0
-DUTY_MAX = 1
 
 Y_AS_MIN = 0
 Y_AS_MAX = None
 
+
+# ================= TRENDLIJN =================
+
+ELEKTRISCHE_TRENDLIJN = True
+
+# 2 = tweedegraads
+# 3 = derdegraads
+TREND_GRAAD = 3
+
+
+# ================= WEERGAVE MEETPUNTEN =================
+# Jitter verandert alleen de horizontale weergave.
+# De echte snelheid en alle berekeningen blijven ongewijzigd.
+
+X_JITTER = 0.10
+
+MARKER_GROOTTE = 8
+MARKER_ALPHA = 0.35
+
+# Met een vaste seed ziet de willekeurige spreiding
+# er bij iedere uitvoering hetzelfde uit.
+JITTER_SEED = 42
+
+
 # ================= CSV INLEZEN =================
 
+def lees_csv(bestandsnaam, naam):
+    bestand = Path(bestandsnaam)
 
-def lees_csv(bestandsnaam):
-    df = pd.read_csv(
-        bestandsnaam,
-        header=None,
-        sep=",",
-        comment="#",
-        engine="python"
-    )
+    if not bestand.exists():
+        print(
+            f"WAARSCHUWING: {naam}-bestand niet gevonden: "
+            f"{bestandsnaam}"
+        )
+        return None
 
-    print(f"{bestandsnaam}: {df.shape[1]} kolommen ingelezen")
-    return df
+    try:
+        df = pd.read_csv(
+            bestand,
+            header=None,
+            sep=",",
+            comment="#",
+            engine="python"
+        )
+
+        print(
+            f"{naam}: {df.shape[0]} regels en "
+            f"{df.shape[1]} kolommen ingelezen"
+        )
+
+        return df
+
+    except Exception as fout:
+        print(
+            f"WAARSCHUWING: {naam} kon niet worden ingelezen: "
+            f"{fout}"
+        )
+        return None
 
 
-master_df = lees_csv(CSV_BESTANDEN["Master"])
-vesc_df = lees_csv(CSV_BESTANDEN["VESC"])
-loadcell_df = lees_csv(CSV_BESTANDEN["Loadcell"])
+master_df = lees_csv(
+    CSV_BESTANDEN["Master"],
+    "Master"
+)
 
-# ================= GEGEVENS SELECTEREN =================
+vesc_df = lees_csv(
+    CSV_BESTANDEN["VESC"],
+    "VESC"
+)
 
-# -1 omdat pandas vanaf kolom 0 telt
+loadcell_df = lees_csv(
+    CSV_BESTANDEN["Loadcell"],
+    "Loadcell"
+)
+
+
+# ================= KOLOMINDEXEN =================
+
 ix_tijd = VELD_TIJD - 1
 ix_snelheid = VELD_SNELHEID - 1
 
-ix_motorstroom = VELD_MOTORSTROOM - 1
-ix_duty = VELD_DUTY_CYCLE - 1
+ix_ingangsstroom = VELD_INGANGSSTROOM - 1
 ix_spanning = VELD_SPANNING - 1
 
 ix_loadcell_adc = VELD_LOADCELL_ADC - 1
 
-master = pd.DataFrame({
-    "tijd": pd.to_numeric(
-        master_df.iloc[:, ix_tijd],
-        errors="coerce"
-    ),
-    "snelheid_kmh": pd.to_numeric(
-        master_df.iloc[:, ix_snelheid],
-        errors="coerce"
-    ),
-})
 
-vesc = pd.DataFrame({
-    "tijd": pd.to_numeric(
-        vesc_df.iloc[:, ix_tijd],
-        errors="coerce"
-    ),
-    "motorstroom_A": pd.to_numeric(
-        vesc_df.iloc[:, ix_motorstroom],
-        errors="coerce"
-    ),
-    "duty_cycle": pd.to_numeric(
-        vesc_df.iloc[:, ix_duty],
-        errors="coerce"
-    ),
-    "spanning_V": pd.to_numeric(
-        vesc_df.iloc[:, ix_spanning],
-        errors="coerce"
-    ),
-})
+# ================= GEGEVENS SELECTEREN =================
 
-loadcell = pd.DataFrame({
-    "tijd": pd.to_numeric(
-        loadcell_df.iloc[:, ix_tijd],
-        errors="coerce"
-    ),
-    "loadcell_adc": pd.to_numeric(
-        loadcell_df.iloc[:, ix_loadcell_adc],
-        errors="coerce"
-    ),
-})
+master = None
+vesc = None
+loadcell = None
 
-# Ongeldige regels verwijderen
-master = master.dropna().sort_values("tijd")
-vesc = vesc.dropna().sort_values("tijd")
-loadcell = loadcell.dropna().sort_values("tijd")
 
-# Dubbele tijdstippen verwijderen
-master = master.drop_duplicates(subset="tijd")
-vesc = vesc.drop_duplicates(subset="tijd")
-loadcell = loadcell.drop_duplicates(subset="tijd")
+# ---------- Master ----------
+
+if master_df is not None:
+
+    benodigde_index = max(
+        ix_tijd,
+        ix_snelheid
+    )
+
+    if benodigde_index < master_df.shape[1]:
+
+        master = pd.DataFrame({
+            "tijd": pd.to_numeric(
+                master_df.iloc[:, ix_tijd],
+                errors="coerce"
+            ),
+            "snelheid_kmh": pd.to_numeric(
+                master_df.iloc[:, ix_snelheid],
+                errors="coerce"
+            ),
+        })
+
+        master = (
+            master
+            .dropna(subset=["tijd", "snelheid_kmh"])
+            .sort_values("tijd")
+            .drop_duplicates(subset="tijd")
+        )
+
+    else:
+        print(
+            "WAARSCHUWING: benodigde Master-velden ontbreken"
+        )
+
+
+# ---------- VESC ----------
+
+if vesc_df is not None:
+
+    benodigde_index = max(
+        ix_tijd,
+        ix_ingangsstroom,
+        ix_spanning
+    )
+
+    if benodigde_index < vesc_df.shape[1]:
+
+        vesc = pd.DataFrame({
+            "tijd": pd.to_numeric(
+                vesc_df.iloc[:, ix_tijd],
+                errors="coerce"
+            ),
+            "ingangsstroom_A": pd.to_numeric(
+                vesc_df.iloc[:, ix_ingangsstroom],
+                errors="coerce"
+            ),
+            "spanning_V": pd.to_numeric(
+                vesc_df.iloc[:, ix_spanning],
+                errors="coerce"
+            ),
+        })
+
+        vesc = (
+            vesc
+            .dropna(subset=["tijd"])
+            .sort_values("tijd")
+            .drop_duplicates(subset="tijd")
+        )
+
+    else:
+        print(
+            "WAARSCHUWING: benodigde VESC-velden ontbreken"
+        )
+
+
+# ---------- Loadcell ----------
+
+if loadcell_df is not None:
+
+    benodigde_index = max(
+        ix_tijd,
+        ix_loadcell_adc
+    )
+
+    if benodigde_index < loadcell_df.shape[1]:
+
+        loadcell = pd.DataFrame({
+            "tijd": pd.to_numeric(
+                loadcell_df.iloc[:, ix_tijd],
+                errors="coerce"
+            ),
+            "loadcell_adc": pd.to_numeric(
+                loadcell_df.iloc[:, ix_loadcell_adc],
+                errors="coerce"
+            ),
+        })
+
+        loadcell = (
+            loadcell
+            .dropna(subset=["tijd"])
+            .sort_values("tijd")
+            .drop_duplicates(subset="tijd")
+        )
+
+    else:
+        print(
+            "WAARSCHUWING: benodigde loadcellvelden ontbreken"
+        )
+
+
+# ================= MASTER CONTROLEREN =================
+
+if master is None or master.empty:
+    raise FileNotFoundError(
+        "De Master-CSV is nodig omdat deze de vaarsnelheid bevat."
+    )
+
 
 # ================= TIJDREEKSEN KOPPELEN =================
-# Master wordt als basis gebruikt.
-# De dichtstbijzijnde VESC- en loadcellmeting wordt gekoppeld.
 
-data = pd.merge_asof(
-    master,
-    vesc,
-    on="tijd",
-    direction="nearest",
-    tolerance=TIJD_TOLERANTIE
+data = master.copy()
+
+
+if vesc is not None and not vesc.empty:
+
+    data = pd.merge_asof(
+        data.sort_values("tijd"),
+        vesc.sort_values("tijd"),
+        on="tijd",
+        direction="nearest",
+        tolerance=TIJD_TOLERANTIE
+    )
+
+    print("VESC-data gekoppeld")
+
+else:
+    print("VESC-data niet beschikbaar")
+
+
+if loadcell is not None and not loadcell.empty:
+
+    data = pd.merge_asof(
+        data.sort_values("tijd"),
+        loadcell.sort_values("tijd"),
+        on="tijd",
+        direction="nearest",
+        tolerance=TIJD_TOLERANTIE
+    )
+
+    print("Loadcelldata gekoppeld")
+
+else:
+    print("Loadcelldata niet beschikbaar")
+
+
+# ================= ALGEMENE BEREKENINGEN =================
+
+data["snelheid_ms"] = (
+    data["snelheid_kmh"] / 3.6
 )
 
-data = pd.merge_asof(
-    data,
-    loadcell,
-    on="tijd",
-    direction="nearest",
-    tolerance=TIJD_TOLERANTIE
-)
 
-# Regels zonder gekoppelde meting verwijderen
-data = data.dropna()
+# ================= ELEKTRISCH VERMOGEN =================
 
-# ================= LOADCELL NAAR KRACHT =================
+benodigde_elektrische_kolommen = {
+    "spanning_V",
+    "ingangsstroom_A"
+}
 
-data["kracht_loadcell_N"] = (
-    RICHTINGSCOEFFICIENT * data["loadcell_adc"]
-    + STARTWAARDE
-)
+if benodigde_elektrische_kolommen.issubset(data.columns):
 
-if LOADCELL_OMKEREN:
-    data["kracht_loadcell_N"] *= -1
+    data["vermogen_elektrisch_W"] = (
+        data["spanning_V"]
+        * data["ingangsstroom_A"]
+    )
 
-# Hefboomwerking:
-# L1 * F_loadcell = L2 * F_schroef
+    print("Elektrisch vermogen berekend")
 
-data["kracht_schroef_N"] = (
-    data["kracht_loadcell_N"] * L1 / L2
-)
+else:
+    print(
+        "Elektrisch vermogen overgeslagen: "
+        "VESC-data ontbreekt"
+    )
 
-# ================= VERMOGENS BEREKENEN =================
 
-# Vaarsnelheid omrekenen van km/h naar m/s
-data["snelheid_ms"] = data["snelheid_kmh"] / 3.6
+# ================= MECHANISCH VERMOGEN =================
 
-# Benadering elektrisch vermogen:
-# spanning × motorstroom × duty-cycle
-data["vermogen_elektrisch_W"] = (
-    data["spanning_V"]
-    * data["motorstroom_A"]
-)
+if "loadcell_adc" in data.columns:
 
-# Mechanisch/propulsief vermogen:
-# schroefkracht × vaarsnelheid
-data["vermogen_mechanisch_W"] = (
-    data["kracht_schroef_N"]
-    * data["snelheid_ms"]
-)
+    data["kracht_loadcell_N"] = (
+        RICHTINGSCOEFFICIENT
+        * data["loadcell_adc"]
+        + STARTWAARDE
+    )
+
+    if LOADCELL_OMKEREN:
+        data["kracht_loadcell_N"] *= -1
+
+    data["kracht_schroef_N"] = (
+        data["kracht_loadcell_N"]
+        * L1 / L2
+    )
+
+    data["vermogen_mechanisch_W"] = (
+        data["kracht_schroef_N"]
+        * data["snelheid_ms"]
+    )
+
+    print("Mechanisch vermogen berekend")
+
+else:
+    print(
+        "Mechanisch vermogen overgeslagen: "
+        "loadcelldata ontbreekt"
+    )
+
 
 # ================= REFERENTIE UIT SLEEPTEST =================
-
-# Trendlijn uit de sleeptest:
-# F = 0.6908 * v^2 + 1.4184 * v
-# v in km/h, F in N
 
 data["kracht_sleeptest_N"] = (
     0.6908 * data["snelheid_kmh"] ** 2
     + 1.4184 * data["snelheid_kmh"]
 )
 
-# Referentievermogen uit sleeptest
 data["vermogen_sleeptest_W"] = (
     data["kracht_sleeptest_N"]
     * data["snelheid_ms"]
 )
 
-# ================= FILTERS =================
 
-mask = (
-    data["snelheid_kmh"].notna()
-    & data["vermogen_elektrisch_W"].notna()
-    & data["vermogen_mechanisch_W"].notna()
-    & data["duty_cycle"].between(DUTY_MIN, DUTY_MAX)
-)
+# ================= ALGEMENE FILTERS =================
+
+mask = data["snelheid_kmh"].notna()
+
+
+if TIJD_MIN is not None:
+    mask &= data["tijd"] >= TIJD_MIN
+
+if TIJD_MAX is not None:
+    mask &= data["tijd"] <= TIJD_MAX
 
 if SNELHEID_MIN is not None:
     mask &= data["snelheid_kmh"] >= SNELHEID_MIN
@@ -230,83 +406,249 @@ if SNELHEID_MIN is not None:
 if SNELHEID_MAX is not None:
     mask &= data["snelheid_kmh"] <= SNELHEID_MAX
 
-if Y_AS_MIN is not None:
-    mask &= data["vermogen_elektrisch_W"] >= Y_AS_MIN
-    mask &= data["vermogen_mechanisch_W"] >= Y_AS_MIN
-
-if Y_AS_MAX is not None:
-    mask &= data["vermogen_elektrisch_W"] <= Y_AS_MAX
-    mask &= data["vermogen_mechanisch_W"] <= Y_AS_MAX
 
 data = data.loc[mask].copy()
 
-# Sorteren op snelheid, zodat de lijnen niet heen en weer springen
-data = data.sort_values("snelheid_kmh")
-
-print(f"{len(data)} gekoppelde en geldige meetpunten")
-
-# ================= RESULTATEN OPSLAAN =================
-
-uitvoer = data[[
-    "tijd",
-    "snelheid_kmh",
-    "snelheid_ms",
-    "spanning_V",
-    "motorstroom_A",
-    "duty_cycle",
-    "loadcell_adc",
-    "kracht_loadcell_N",
-    "kracht_schroef_N",
-    "vermogen_elektrisch_W",
-    "vermogen_mechanisch_W",
-]]
-
-uitvoer.to_csv(
-    "vermogen_tov_vaarsnelheid.csv",
-    index=False
+data = data.replace(
+    [np.inf, -np.inf],
+    np.nan
 )
 
-print("Resultaten opgeslagen als vermogen_tov_vaarsnelheid.csv")
+data = data.sort_values("snelheid_kmh")
+
+print(
+    f"{len(data)} meetpunten na tijd- en snelheidsfilter"
+)
+
+
+# ================= JITTER VOOR DE WEERGAVE =================
+# Deze kolom wordt alleen voor de scatterpunten gebruikt.
+
+rng = np.random.default_rng(
+    JITTER_SEED
+)
+
+data["snelheid_plot_kmh"] = (
+    data["snelheid_kmh"]
+    + rng.normal(
+        loc=0,
+        scale=X_JITTER,
+        size=len(data)
+    )
+)
+
+
+# ================= ELEKTRISCHE TRENDLIJN =================
+# De trendlijn gebruikt snelheid_kmh, dus niet snelheid_plot_kmh.
+
+trend_data = None
+
+if (
+    ELEKTRISCHE_TRENDLIJN
+    and "vermogen_elektrisch_W" in data.columns
+):
+
+    trend_data = data.dropna(
+        subset=[
+            "snelheid_kmh",
+            "vermogen_elektrisch_W"
+        ]
+    ).copy()
+
+    minimaal_aantal_punten = TREND_GRAAD + 1
+
+    if len(trend_data) >= minimaal_aantal_punten:
+
+        try:
+            coefficienten = np.polyfit(
+                trend_data["snelheid_kmh"],
+                trend_data["vermogen_elektrisch_W"],
+                TREND_GRAAD
+            )
+
+            trend_functie = np.poly1d(
+                coefficienten
+            )
+
+            # Een vloeiende x-reeks voor een nette trendlijn
+            trend_x = np.linspace(
+                trend_data["snelheid_kmh"].min(),
+                trend_data["snelheid_kmh"].max(),
+                300
+            )
+
+            trend_y = trend_functie(
+                trend_x
+            )
+
+            print("Elektrische trendlijn:")
+            print(trend_functie)
+
+        except (
+            np.linalg.LinAlgError,
+            ValueError,
+            TypeError
+        ) as fout:
+
+            print(
+                "Elektrische trendlijn kon niet worden berekend: "
+                f"{fout}"
+            )
+
+            trend_data = None
+
+    else:
+        print(
+            "Elektrische trendlijn overgeslagen: "
+            "te weinig geldige meetpunten"
+        )
+
+        trend_data = None
+
 
 # ================= PLOT =================
 
-fig, ax = plt.subplots(figsize=(11, 6))
-
-scatter_elektrisch = ax.scatter(
-    data["snelheid_kmh"],
-    data["vermogen_elektrisch_W"],
-    s=12,
-    alpha=0.6,
-    label="Elektrisch vermogen"
+fig, ax = plt.subplots(
+    figsize=(11, 6)
 )
 
-scatter_mechanisch = ax.scatter(
-    data["snelheid_kmh"],
-    data["vermogen_mechanisch_W"],
-    s=12,
-    alpha=0.6,
-    label="Mechanisch vermogen loadcell"
+grafiek_objecten = []
+
+
+# ---------- Elektrisch vermogen ----------
+
+if "vermogen_elektrisch_W" in data.columns:
+
+    elektrisch_data = data.dropna(
+        subset=[
+            "snelheid_plot_kmh",
+            "vermogen_elektrisch_W"
+        ]
+    )
+
+    if not elektrisch_data.empty:
+
+        scatter_elektrisch = ax.scatter(
+            elektrisch_data["snelheid_plot_kmh"],
+            elektrisch_data["vermogen_elektrisch_W"],
+            s=MARKER_GROOTTE,
+            alpha=MARKER_ALPHA,
+            label="Elektrisch vermogen"
+        )
+
+        grafiek_objecten.append(
+            scatter_elektrisch
+        )
+
+
+# ---------- Elektrische trendlijn ----------
+
+if trend_data is not None:
+
+    lijn_elektrisch_trend, = ax.plot(
+        trend_x,
+        trend_y,
+        linewidth=2,
+        label="Trendlijn elektrisch vermogen",
+        color="pink"
+    )
+
+    grafiek_objecten.append(
+        lijn_elektrisch_trend
+    )
+
+
+# ---------- Mechanisch vermogen ----------
+
+if "vermogen_mechanisch_W" in data.columns:
+
+    mechanisch_data = data.dropna(
+        subset=[
+            "snelheid_plot_kmh",
+            "vermogen_mechanisch_W"
+        ]
+    )
+
+    if not mechanisch_data.empty:
+
+        scatter_mechanisch = ax.scatter(
+            mechanisch_data["snelheid_plot_kmh"],
+            mechanisch_data["vermogen_mechanisch_W"],
+            s=MARKER_GROOTTE,
+            alpha=MARKER_ALPHA,
+            label="Mechanisch vermogen loadcell"
+        )
+
+        grafiek_objecten.append(
+            scatter_mechanisch
+        )
+
+
+# ---------- Sleeptest ----------
+
+sleeptest_data = data.dropna(
+    subset=[
+        "snelheid_kmh",
+        "vermogen_sleeptest_W"
+    ]
+).sort_values(
+    "snelheid_kmh"
 )
 
-lijn_sleeptest, = ax.plot(
-    data["snelheid_kmh"],
-    data["vermogen_sleeptest_W"],
-    linewidth=2,
-    label="Referentievermogen sleeptest",
-    color ="green",
+if not sleeptest_data.empty:
+
+    lijn_sleeptest, = ax.plot(
+        sleeptest_data["snelheid_kmh"],
+        sleeptest_data["vermogen_sleeptest_W"],
+        linewidth=2,
+        label="Referentievermogen sleeptest",
+        color="green"
+    )
+
+    grafiek_objecten.append(
+        lijn_sleeptest
+    )
+
+
+# ================= PLOT CONTROLEREN =================
+
+if not grafiek_objecten:
+    raise RuntimeError(
+        "Er zijn geen beschikbare gegevens om te plotten."
+    )
+
+
+# ================= PLOTOPMAAK =================
+
+ax.set_xlabel(
+    "Vaarsnelheid (km/h)"
 )
 
-ax.set_xlabel("Vaarsnelheid (km/h)")
-ax.set_ylabel("Vermogen (W)")
+ax.set_ylabel(
+    "Vermogen (W)"
+)
+
+ax.set_title(
+    PLOT_TITLE
+)
+
+if (
+    Y_AS_MIN is not None
+    or Y_AS_MAX is not None
+):
+    ax.set_ylim(
+        Y_AS_MIN,
+        Y_AS_MAX
+    )
+
 ax.grid(True)
 
-legenda = ax.legend(loc="best")
 
-grafiek_objecten = [
-    scatter_elektrisch,
-    scatter_mechanisch,
-    lijn_sleeptest
-]
+# ================= KLIKBARE LEGENDA =================
+
+legenda = ax.legend(
+    loc="best"
+)
 
 koppeling = {}
 
@@ -315,18 +657,31 @@ for legenda_item, grafiek_item in zip(
     grafiek_objecten
 ):
     legenda_item.set_picker(True)
+
+    if hasattr(
+        legenda_item,
+        "set_pickradius"
+    ):
+        legenda_item.set_pickradius(5)
+
     koppeling[legenda_item] = grafiek_item
 
 
 def bij_klik(event):
     legenda_item = event.artist
-    grafiek_item = koppeling.get(legenda_item)
+
+    grafiek_item = koppeling.get(
+        legenda_item
+    )
 
     if grafiek_item is None:
         return
 
     zichtbaar = not grafiek_item.get_visible()
-    grafiek_item.set_visible(zichtbaar)
+
+    grafiek_item.set_visible(
+        zichtbaar
+    )
 
     legenda_item.set_alpha(
         1.0 if zichtbaar else 0.2
@@ -335,7 +690,11 @@ def bij_klik(event):
     fig.canvas.draw_idle()
 
 
-fig.canvas.mpl_connect("pick_event", bij_klik)
-plt.title(PLOT_TITLE)
+fig.canvas.mpl_connect(
+    "pick_event",
+    bij_klik
+)
+
+
 plt.tight_layout()
 plt.show()
