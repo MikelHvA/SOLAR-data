@@ -60,8 +60,8 @@ y_right_max = None
 LIJNEN = [
  
     {
-        "csv": "VESC",
-        "veld": 13,
+        "csv": "Master",
+        "veld": 11,
         "as": "links",
         "smooth": False,
         "window": 15,
@@ -70,57 +70,16 @@ LIJNEN = [
         "markersize": 3,
         "alpha": 0.95,
     },
-    {
-        "csv": "VESC",       
-        "veld": 10,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
-    },
-    {
-        "csv": "VESC",       
-        "veld": 14,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
-    },
-    {
-        "csv": "Master",       
-        "veld": 18,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
-    },
       {
-        "csv": "VESC",       
-        "veld": 12,            
-       "as": "rechts",         
-       "smooth": False,       
-       "window": 15,          
-        "linestyle": "solid",  
-        "linewidth": 2,        
-       "marker": None,        
-       "markersize": 3,       
-       "alpha": 1.0,          
-         
+        "csv": "Master",
+        "veld": 18,
+        "as": "links",
+        "smooth": False,
+        "window": 15,
+        "linestyle": "-",
+        "marker": "None",
+        "markersize": 3,
+        "alpha": 0.95,
     },
 ]
 
