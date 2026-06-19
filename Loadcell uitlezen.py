@@ -9,7 +9,7 @@ veld_adc = 5        # ADC-waarde van de loadcell
 
 UITVOER_BESTAND = "loadcell_kracht_N.csv"
 
-Plot_title = "Loadcell kracht"
+Plot_title = "Loadcell kracht (12 kmh) "
 
 # ================= RANGES =================
 
@@ -21,8 +21,8 @@ y_max = None
 
 # ================= KALIBRATIE =================
 
-RICHTINGSCOEFFICIENT = -2.471E-05
-STARTWAARDE = -5.583
+RICHTINGSCOEFFICIENT = -2E-06 #-2.471E-05
+STARTWAARDE = -4.457 #-5.583
 
 
 def adc_naar_newton(adc):
@@ -66,7 +66,7 @@ tijd = pd.to_numeric(df.iloc[:, ix_tijd], errors="coerce")
 adc = pd.to_numeric(df.iloc[:, ix_adc], errors="coerce")
 
 # ADC omrekenen naar kracht in N (inclusief hefboom staartstuk)
-kracht_N = (0.2 * (adc_naar_newton(adc) * -1)) / 0.71
+kracht_N = (adc_naar_newton(adc) * -1)
 
 # Alleen regels gebruiken waarin tijd, ADC en kracht geldig zijn
 mask = tijd.notna() & adc.notna() & kracht_N.notna()

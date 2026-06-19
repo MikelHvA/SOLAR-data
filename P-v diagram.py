@@ -32,22 +32,15 @@ VELD_INGANGSSTROOM = 11
 VELD_SPANNING = 14
 
 # Loadcell
-VELD_LOADCELL_ADC = 5
+VELD_LOADCELL_ADC = 6
 
 
 # ================= LOADCELLKALIBRATIE =================
 
-RICHTINGSCOEFFICIENT = -2.471E-05
-STARTWAARDE = -5.583
+RICHTINGSCOEFFICIENT = -2E-06 #-2.471E-05
+STARTWAARDE = -4.457 #-5.583
 
 LOADCELL_OMKEREN = True
-
-
-# ================= HEFBOOMAFSTANDEN =================
-
-L1 = 0.20  # afstand draaipunt tot loadcell in meter
-L2 = 0.71  # afstand draaipunt tot schroef in meter
-
 
 # ================= TIJDSYNCHRONISATIE =================
 
@@ -56,11 +49,11 @@ TIJD_TOLERANTIE = 0.25
 
 # ================= FILTERS =================
 
-TIJD_MIN = 6800
-TIJD_MAX = 7800
+TIJD_MIN = None
+TIJD_MAX = None
 
 SNELHEID_MIN = 0
-SNELHEID_MAX = 20
+SNELHEID_MAX = 15
 
 Y_AS_MIN = 0
 Y_AS_MAX = None
@@ -345,22 +338,19 @@ else:
 
 
 # ================= MECHANISCH VERMOGEN =================
+# De kalibratieformule geeft direct de kracht bij de schroef.
+# Er wordt daarom geen hefboomverhouding meer toegepast.
 
 if "loadcell_adc" in data.columns:
 
-    data["kracht_loadcell_N"] = (
+    data["kracht_schroef_N"] = (
         RICHTINGSCOEFFICIENT
         * data["loadcell_adc"]
         + STARTWAARDE
     )
 
     if LOADCELL_OMKEREN:
-        data["kracht_loadcell_N"] *= -1
-
-    data["kracht_schroef_N"] = (
-        data["kracht_loadcell_N"]
-        * L1 / L2
-    )
+        data["kracht_schroef_N"] *= -1
 
     data["vermogen_mechanisch_W"] = (
         data["kracht_schroef_N"]
@@ -374,7 +364,6 @@ else:
         "Mechanisch vermogen overgeslagen: "
         "loadcelldata ontbreekt"
     )
-
 
 # ================= REFERENTIE UIT SLEEPTEST =================
 
