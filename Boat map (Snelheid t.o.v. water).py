@@ -32,9 +32,10 @@ def latlon_to_place(lat, lon):
 
 CSV_GPS    = "1_Master_08_05.csv"      # Voor 2025--> geldt CSV_GPS = "1_master_08_05.csv", voor 2024 en ouder geldt CSV_GPS = "7_SDR_xx_02.csv"
 CSV_MASTER = "1_Master_08_05.csv" 
-CSV_VESC   = "7_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
-CSV_ACCU   = "3_Accu_09_05.csv"     
+CSV_VESC   = "5_VESC_20_02.csv"     # Voor 2025--> geldt CSV_VESC = "7_VESC_20_02csv", voor 2024 en ouder geldt CSV_VESC = "B_VESC_20_02.csv"
+CSV_ACCU   = "2_Accu_09_05.csv"     
 kolom_tijd     = 2
+kolom_tijd_gps = 5 
 kolom_lat      = 7                        # 24 voor oude format, alleen van toepassing voor 2024 of ouder (SDR) ander 7
 kolom_lat_ns   = 8                         # 25 voor oude format (SDR) anders 8
 kolom_lon      = 9                         # 26 voor oude format (SDR) anders 9
@@ -47,8 +48,8 @@ kolom_spanning = 14       # uit VESC
 kolom_stroom_VESC = 11   # uit VESC
 
 # Filters
-tijd_min = 9240
-tijd_max = 13600
+tijd_min = None
+tijd_max = None
 
 snelheid_min = None
 snelheid_max = 20
@@ -56,7 +57,7 @@ snelheid_max = 20
 RPM_min = None
 RPM_max = None
 
-Reductiekast_verhouding = 8 # Overbrenging van motor naar schroefas
+Reductiekast_verhouding = 5 # Overbrenging van motor naar schroefas
 
 # Detectie
 STOP_SNELHEID_MAX = 1.0
@@ -94,6 +95,7 @@ df_gps = pd.read_csv(CSV_GPS, header=None, sep=",", comment="#", engine="python"
 
 gps = pd.DataFrame({
     "tijd":     pd.to_numeric(df_gps.iloc[:, kolom_tijd - 1], errors="coerce"),
+    "UTC":      pd.to_numeric(df_gps.iloc[:, kolom_tijd_gps - 1], errors="coerce"),
     "lat_raw":  pd.to_numeric(df_gps.iloc[:, kolom_lat - 1], errors="coerce"),
     "lat_ns":   df_gps.iloc[:, kolom_lat_ns - 1],
     "lon_raw":  pd.to_numeric(df_gps.iloc[:, kolom_lon - 1], errors="coerce"),
@@ -289,7 +291,7 @@ fig.add_trace(go.Scattermapbox(
     ),
     text=[
     (
-        f"Tijd: {t:.1f}s"
+        f"Tijd: {t:.1f}s (UTC: {u:.0f})"
         f"<br>Snelheid: {v:.2f} km/h"
         f"<br>RPM motor: {r:.0f} ({rs:.0f})"
         f"<br>SoC: {s:.1f} %"
@@ -298,21 +300,22 @@ fig.add_trace(go.Scattermapbox(
     )
     if pd.notna(r) else
     (
-        f"Tijd: {t:.1f}s"
+        f"Tijd: {t:.1f}s (UTC: geen data)"
         f"<br>Snelheid: {v:.2f} km/h"
         f"<br>RPM motor: n.v.t."
         f"<br>SoC: n.v.t."
         f"<br>Vermogen: n.v.t."
         #f"<br>SoC backup: n.v.t." # weghalen voor aanzetten voor backup SoC, uit accu CSV (ook regel 291)
     )
-    for t, v, r, rs, s, s2, p in zip(
+    for t, v, r, rs, s, s2, p, u in zip(
         gps["tijd"],
         gps["snelheid"],
         gps["rpm"],
         gps["rpm_schroef"],
         gps["soc"],
         gps["soc2"],
-        gps["vermogen"]
+        gps["vermogen"],
+        gps["UTC"]
     )
 ],
 name = "SOLAR"   
