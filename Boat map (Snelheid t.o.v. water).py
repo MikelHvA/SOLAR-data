@@ -40,7 +40,8 @@ kolom_lat      = 7                        # 24 voor oude format, alleen van toep
 kolom_lat_ns   = 8                         # 25 voor oude format (SDR) anders 8
 kolom_lon      = 9                         # 26 voor oude format (SDR) anders 9
 kolom_lon_ew   = 10                        # 27 voor oude format (SDR) anders 10
-kolom_snelheid = 11      # uit master / 11 is Snelheid t.o.v. de grond, 18 is t.o.v. water
+kolom_snelheid_tov_water = 18
+Kolom_snelheid_tov_grond = 11      
 kolom_rpm      = 13      # uit VESC
 kolom_ct       = 19      # capaciteit Accu (A) (Wordt gebruikt voor SoC berekening)
 kolom_soc      = 21      # SoC Accu (%) (ALLEEN VOOR BACKUP)
@@ -108,7 +109,8 @@ df_master = pd.read_csv(CSV_MASTER, header=None, sep=",", comment="#", engine="p
 
 master = pd.DataFrame({
     "tijd": pd.to_numeric(df_master.iloc[:, kolom_tijd - 1], errors="coerce"),
-    "snelheid": pd.to_numeric(df_master.iloc[:, kolom_snelheid - 1], errors="coerce"),
+    "snelheid_tov_water": pd.to_numeric(df_master.iloc[:, kolom_snelheid_tov_water - 1], errors="coerce"),
+    "snelheid_tov_grond": pd.to_numeric(df_master.iloc[:, Kolom_snelheid_tov_grond - 1], errors="coerce"),
 }).dropna()
 
 # ================= VESC CSV =================
@@ -153,7 +155,7 @@ gps = pd.merge_asof(
     on="tijd",
     direction="nearest",
     tolerance=1.0
-).dropna(subset=["snelheid"])
+).dropna(subset=["snelheid_tov_water"])
 
 gps = pd.merge_asof(
     gps,    
@@ -173,7 +175,7 @@ gps = pd.merge_asof(
 
 gps["rpm_schroef"] = gps["rpm"] / Reductiekast_verhouding
 gps["vermogen"] = gps["spanning"] * gps["stroom"] 
-gps["snelheid"] = gps["snelheid"] * 0.93   #omrekenfactor
+gps["snelheid_tov_water"] = gps["snelheid_tov_water"] * 0.93   #omrekenfactor
 
 # ================= FILTERS =================
 
@@ -184,10 +186,10 @@ if tijd_max is not None:
     gps = gps[gps["tijd"] <= tijd_max]
 
 if snelheid_min is not None:
-    gps = gps[gps["snelheid"] >= snelheid_min]
+    gps = gps[gps["snelheid_tov_water"] >= snelheid_min]
 
 if snelheid_max is not None:
-    gps = gps[gps["snelheid"] <= snelheid_max]
+    gps = gps[gps["snelheid_tov_water"] <= snelheid_max]
 
 if RPM_min is not None:
     gps = gps[gps["rpm"] >= RPM_min]
@@ -198,7 +200,7 @@ if RPM_max is not None:
 # ================= STOP / ANKER =================
 
 gps["snelheid_smooth"] = (
-    gps["snelheid"]
+    gps["snelheid_tov_water"]
     .rolling(window=5, center=True, min_periods=1)
     .mean()
 )
@@ -285,14 +287,15 @@ fig.add_trace(go.Scattermapbox(
     mode="markers",
     marker=dict(
         size=6,
-        color=gps["snelheid"],
+        color=gps["snelheid_tov_water"],
         colorscale="Turbo",
         colorbar=dict(title="Snelheid (km/h)")
     ),
     text=[
     (
         f"Tijd: {t:.1f}s (UTC: {u:.0f})"
-        f"<br>Snelheid: {v:.2f} km/h"
+        f"<br>Snelheid t.o.v. water: {v:.2f} km/h"
+        f"<br>Snelheid t.o.v. grond: {v2:.2f} km/h"
         f"<br>RPM motor: {r:.0f} ({rs:.0f})"
         f"<br>SoC: {s:.1f} %"
         f"<br>Vermogen: {p:.0f} W"
@@ -301,15 +304,17 @@ fig.add_trace(go.Scattermapbox(
     if pd.notna(r) else
     (
         f"Tijd: {t:.1f}s (UTC: geen data)"
-        f"<br>Snelheid: {v:.2f} km/h"
+        f"<br>Snelheid t.o.v. water: {v:.2f} km/h"
+        f"<br>Snelheid t.o.v. grond: {v2:.2f} km/h"
         f"<br>RPM motor: n.v.t."
         f"<br>SoC: n.v.t."
         f"<br>Vermogen: n.v.t."
         #f"<br>SoC backup: n.v.t." # weghalen voor aanzetten voor backup SoC, uit accu CSV (ook regel 291)
     )
-    for t, v, r, rs, s, s2, p, u in zip(
+    for t, v, v2, r, rs, s, s2, p, u in zip(
         gps["tijd"],
-        gps["snelheid"],
+        gps["snelheid_tov_water"],
+        gps["snelheid_tov_grond"],
         gps["rpm"],
         gps["rpm_schroef"],
         gps["soc"],

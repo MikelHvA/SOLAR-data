@@ -24,3 +24,6 @@ Bug:
 15-07-2026 (V1.3)
 - Naam veranderd naar "Boat map (Snelheid t.o.v.water).py
 - UTC data toegevoegd aan label, houdt wel rekening dat deze + 1 of + 2 is afhankelijk van de zomer/wintertijd. 
+
+23-07-2026 (V1.4)
+- Snelheid t.o.v. water en t.o.v. grond toegevoegd in het label, zo kan er makkelijk gezien worden of het stroming tegen/stroming mee is.  
