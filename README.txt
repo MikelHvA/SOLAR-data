@@ -55,6 +55,9 @@ V1
 - Trendlijn sleeptest verslag TN Quincy en Bono toegevoegd 
 - Je kan kiezen tussen snelheid t.o.v. het water en de grond (veld 11 vs 18)
 
+V1.1
+- Datapunten hebben nu een kleur op basis van tijd in de datalogger (master). Dit kan uit en aan gezet worden. 
+
 Limitaties:
 - Nog geen trendline voor mechanisch vermogen (niet verwarren met de trendlijn van de sleeptest)
 - Nog geen filter die uitschieters eruit haalt, hierdoor kan de trendlijn van het elektrisch vermogen soms raar zijn (WIP)
