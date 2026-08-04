@@ -8,8 +8,8 @@ from pathlib import Path
 # ================= INSTELLINGEN =================
 
 PLOT_TITLE = (
-    "Elektrisch en mechanisch vermogen t.o.v. vaarsnelheid "
-    "- Amstel 15-06-2026 ster 8:1 (Incapa)"
+    "Elektrisch vermogen t.o.v. vaarsnelheid (water)  km/h "
+    "- Akkrum Sprint ster 8:1"
 )
 
 CSV_BESTANDEN = {
@@ -25,7 +25,7 @@ CSV_BESTANDEN = {
 VELD_TIJD = 2
 
 # Master
-VELD_SNELHEID = 11
+VELD_SNELHEID = 18
 
 # VESC
 VELD_INGANGSSTROOM = 11
@@ -53,7 +53,7 @@ TIJD_MIN = None
 TIJD_MAX = None
 
 SNELHEID_MIN = 0
-SNELHEID_MAX = 15
+SNELHEID_MAX = 20
 
 Y_AS_MIN = 0
 Y_AS_MAX = None
@@ -75,7 +75,11 @@ TREND_GRAAD = 3
 X_JITTER = 0.10
 
 MARKER_GROOTTE = 8
-MARKER_ALPHA = 0.35
+MARKER_ALPHA = 0.55
+
+# Alle scatterpunten krijgen een kleur op basis van het meetmoment.
+# "viridis" loopt van donkerpaars/blauw (vroeg) naar geel (laat).
+TIJD_KLEURENKAART = "viridis"
 
 # Met een vaste seed ziet de willekeurige spreiding
 # er bij iedere uitvoering hetzelfde uit.
@@ -403,6 +407,24 @@ data = data.replace(
     np.nan
 )
 
+if data.empty:
+    raise RuntimeError(
+        "Er blijven geen meetpunten over na de ingestelde filters."
+    )
+
+# Eén gezamenlijke kleurschaal voor elektrisch en mechanisch vermogen.
+tijd_kleur_min = data["tijd"].min()
+tijd_kleur_max = data["tijd"].max()
+
+# Voorkomt een onbruikbare schaal wanneer er maar één tijdstip is.
+if tijd_kleur_min == tijd_kleur_max:
+    tijd_kleur_max = tijd_kleur_min + 1.0
+
+tijd_norm = plt.Normalize(
+    vmin=tijd_kleur_min,
+    vmax=tijd_kleur_max
+)
+
 data = data.sort_values("snelheid_kmh")
 
 print(
@@ -502,6 +524,7 @@ fig, ax = plt.subplots(
 )
 
 grafiek_objecten = []
+tijdgekleurde_scatter_aanwezig = False
 
 
 # ---------- Elektrisch vermogen ----------
@@ -520,6 +543,10 @@ if "vermogen_elektrisch_W" in data.columns:
         scatter_elektrisch = ax.scatter(
             elektrisch_data["snelheid_plot_kmh"],
             elektrisch_data["vermogen_elektrisch_W"],
+            c=elektrisch_data["tijd"],
+            cmap=TIJD_KLEURENKAART,
+            norm=tijd_norm,
+            marker="o",
             s=MARKER_GROOTTE,
             alpha=MARKER_ALPHA,
             label="Elektrisch vermogen"
@@ -528,6 +555,8 @@ if "vermogen_elektrisch_W" in data.columns:
         grafiek_objecten.append(
             scatter_elektrisch
         )
+
+        tijdgekleurde_scatter_aanwezig = True
 
 
 # ---------- Elektrische trendlijn ----------
@@ -563,6 +592,10 @@ if "vermogen_mechanisch_W" in data.columns:
         scatter_mechanisch = ax.scatter(
             mechanisch_data["snelheid_plot_kmh"],
             mechanisch_data["vermogen_mechanisch_W"],
+            c=mechanisch_data["tijd"],
+            cmap=TIJD_KLEURENKAART,
+            norm=tijd_norm,
+            marker="^",
             s=MARKER_GROOTTE,
             alpha=MARKER_ALPHA,
             label="Mechanisch vermogen loadcell"
@@ -571,6 +604,8 @@ if "vermogen_mechanisch_W" in data.columns:
         grafiek_objecten.append(
             scatter_mechanisch
         )
+
+        tijdgekleurde_scatter_aanwezig = True
 
 
 # ---------- Sleeptest ----------
@@ -631,6 +666,28 @@ if (
     )
 
 ax.grid(True)
+
+
+# ================= KLEURBALK VOOR DE TIJD =================
+
+if tijdgekleurde_scatter_aanwezig:
+
+    tijd_kleurmapper = plt.cm.ScalarMappable(
+        norm=tijd_norm,
+        cmap=TIJD_KLEURENKAART
+    )
+
+    tijd_kleurmapper.set_array([])
+
+    kleurbar = fig.colorbar(
+        tijd_kleurmapper,
+        ax=ax,
+        pad=0.02
+    )
+
+    kleurbar.set_label(
+        "Dataloggertijd (s)"
+    )
 
 
 # ================= KLIKBARE LEGENDA =================
