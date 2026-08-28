@@ -9,13 +9,13 @@ from pathlib import Path
 
 PLOT_TITLE = (
     "Elektrisch vermogen t.o.v. vaarsnelheid (water)  km/h "
-    "- Akkrum Sprint ster 8:1"
+    "- Frankrijk Driehoek 5:1 2026 dag 4 (ALU en PPS)"
 )
 
 CSV_BESTANDEN = {
     "Master": "1_Master_08_05.csv",
-    "VESC": "7_VESC_20_02.csv",
-    "Loadcell": "5_LoadCell_21_03.csv",
+    "VESC": "5_VESC_20_02.csv",
+    "Loadcell": "4_LoadCell_21_03.csv",
 }
 
 
